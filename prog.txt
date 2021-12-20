@@ -1,0 +1,443 @@
+/*
+  Автор: Арепьев Виталий Олегович
+  Дата начала: 18.11.2021
+  Дата окончания: --
+  Версия: 5.1.03
+
+  Формулировка:
+
+  Задать двухмерный массив. Найти наибольший элемент заштрихованной области таблицы A размера NxN
+
+*/
+
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <math.h>
+
+using namespace std;
+
+const unsigned N = 20, M = 2;
+
+void mass(fstream &f, fstream& o, double A[N][M], int& n)
+{
+	char s;
+	double t;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			f >> t;
+			f.get(s);
+			if (s == '\n' && j==0)
+			{
+				j = -1;
+				n = n - 1;
+			}
+			else
+			{
+				A[i][j] = t;
+			}
+		}
+		while (s != '\n')
+		{
+			f.get(s);
+			if (f.eof())
+			{
+				break;
+			}
+		}
+	}
+}
+
+
+void ocr(double& a1, double& b1, double& a2, double& b2, double& r, double& xc1, double& yc1, double& xc2, double& yc2)
+{
+	r = (sqrt((a1 - a2) * (a1 - a2) + (b1 - b2) * (b1 - b2)))/4;
+
+	double xc = (a1 + a2) / 2;
+	double yc = (b1 + b2) / 2;
+
+	xc1 = (xc + a1) / 2;
+	yc1 = (yc + b1) / 2;
+
+	xc2 = (xc + a2) / 2;
+	yc2 = (yc + b2) / 2;
+}
+
+int TR(double& a1, double& b1, double& a2, double& b2, double& a3, double& b3, double CX, double CY)
+{
+	double a = (CY - b1) * (a2 - a1) - (CX - a1) * (b2 - b1);
+	double b = (CY - b2) * (a3 - a2) - (CX - a2) * (b3 - b2);
+	double c = (CY - b3) * (a1 - a3) - (CX - a3) * (b1 - b3);
+
+	if ((a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+int OCU(double& a1, double& b1, double& a2, double& b2, double& r, double& xl1, double& yl1, double& xl2, double& yl2, double& CX, double& CY)
+{
+	double a = (CY - yl1) * (xl2 - xl1) - (CX - xl1) * (yl2 - yl1);
+		if (((CX - a1) * (CX - a1) + (CY - b1) * (CY - b1) <= r * r || (CX - a2) * (CX - a2) + (CY - b2) * (CY - b2) <= r * r) && a >= 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+}
+
+int OCD(double& a1, double& b1, double& a2, double& b2, double& r, double& xl1, double& yl1, double& xl2, double& yl2, double& CX, double& CY)
+{
+	double a = (CY - yl1) * (xl2 - xl1) - (CX - xl1) * (yl2 - yl1);
+	if (((CX - a1) * (CX - a1) + (CY - b1) * (CY - b1) <= r * r || (CX - a2) * (CX - a2) + (CY - b2) * (CY - b2) <= r * r) && a <= 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+
+int main()
+{
+	setlocale(LC_ALL, "ru");
+	fstream f,out1,out2;
+	int i = 0, j = 0, k = 0, N1, l = 0, m = 0, kol = 0, max = 0, a, b = 0, z = 0, p;
+	double A[N][M], x1, x2, x3, y1, y2, y3, r, xc1, yc1, xc2, yc2, CurX, CurY, B[N][M];
+
+	f.open("in.txt", ios::in);
+	out1.open("out1.txt", ios::out);
+	out2.open("out2.txt", ios::out);
+
+	f >> N1;
+
+	mass(f, out1, A, N1);
+
+	a = N1;
+
+	cout << "Координаты точек:" << endl << "X Y" << endl;
+	out1 << "Координаты точек:" << endl << "X Y" << endl;
+	out2 << "Координаты точек:" << endl << "X Y" << endl;
+	for (int i = 0; i < a; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			cout << A[i][j] << ' ';
+			out1 << A[i][j] << ' ';
+			out2 << A[i][j] << ' ';
+		}
+		cout << endl;
+		out1 << endl;
+		out2 << endl;
+	}
+	cout << endl;
+
+
+
+	for (int i = 0; i < a; i++)
+	{
+		for (int j = 0; j < a; j++)
+		{
+			for (int k = 0; k < a; k++)
+			{
+				if (j != i && k != i && k != j)
+				{
+					x1 = A[i][0];
+					y1 = A[i][1];
+
+					x2 = A[j][0];
+					y2 = A[j][1];
+
+					x3 = A[k][0];
+					y3 = A[k][1];
+
+					cout << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << ' ' << x3 << ' ' << y3 << endl;
+
+
+
+					if ((sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2))))
+					{
+						out2 << "Найдена фигура с вершинами:" << endl;
+						out2 << x1 << ' ' << y1 << endl;
+						out2 << x2 << ' ' << y2 << endl;
+						out2 << x3 << ' ' << y3 << endl;
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (TR(x1, y1, x2, y2, x3, y3, CurX, CurY))
+							{
+								kol++;
+							}
+						}
+					}
+					else
+					{
+						out2 << "Фигура не определена" << endl;
+					}
+
+					if (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1)))
+					{
+						ocr(x2, y2, x3, y3, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y1 > y2 && y1 > y3)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x3, y3, x2, y2, CurX, CurY))
+								{
+									kol++;
+								}
+								cout << kol << endl;
+							}
+							if (y1 < y2 && y1 < y3)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x2, y2, x3, y3, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+						cout << kol << endl;
+					}	
+
+
+					if (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3)))
+					{
+						ocr(x3, y3, x1, y1, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y2 > y1 && y2 > y3)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x3, y3, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+							if (y2 < y1 && y2 < y3)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x3, y3, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+					}
+
+
+					if (sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1)) == sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2)))
+					{
+						ocr(x2, y2, x1, y1, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y3 > y2 && y3 > y1)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x2, y2, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+							if (y3 < y2 && y3 < y1)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x2, y2, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+					}
+					if ((sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2))))
+					{
+						out2 << "Количество входящих точек: " << kol << endl;
+					}
+				}
+				if (kol >= max && kol != 0)
+				{
+					max = kol;
+				}
+				
+				kol = 0;
+			}
+		}
+	}
+
+	out2 << "Максимальное количество точек внутри фигуры равно: " << max << endl;
+
+	for (int i = 0; i < a; i++)
+	{
+		for (int j = 0; j < a; j++)
+		{
+			for (int k = 0; k < a; k++)
+			{
+				if (j != i && k != i && k != j)
+				{
+					x1 = A[i][0];
+					y1 = A[i][1];
+
+					x2 = A[j][0];
+					y2 = A[j][1];
+
+					x3 = A[k][0];
+					y3 = A[k][1];
+
+
+
+					if ((sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3))) || (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2))))
+					{
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (TR(x1, y1, x2, y2, x3, y3, CurX, CurY))
+							{
+								kol++;
+							}
+						}
+					}
+
+					if (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x1) * (x3 - x1) + (y3 - y1) * (y3 - y1)))
+					{
+						ocr(x2, y2, x3, y3, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y1 > y2 && y1 > y3)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x3, y3, x2, y2, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+							if (y1 < y2 && y1 < y3)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x2, y2, x3, y3, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+					}
+
+
+					if (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3)))
+					{
+						ocr(x1, y1, x3, y3, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y2 > y1 && y2 > y3)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x1, y1, x3, y3, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+							if (y2 < y1 && y2 < y3)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x1, y1, x3, y3, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+					}
+
+
+					if (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) == sqrt((x3 - x2) * (x3 - x2) + (y3 - y2) * (y3 - y2)))
+					{
+						ocr(x1, y1, x2, y2, r, xc1, yc1, xc2, yc2);
+
+						for (int l = 0; l < a; l++)
+						{
+							CurX = A[l][0];
+							CurY = A[l][1];
+							if (y3 > y2 && y3 > y1)
+							{
+								if (OCD(xc1, yc1, xc2, yc2, r, x2, y2, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+							if (y3 < y2 && y3 < y1)
+							{
+								if (OCU(xc1, yc1, xc2, yc2, r, x2, y2, x1, y1, CurX, CurY))
+								{
+									kol++;
+								}
+							}
+						}
+					}
+				}
+				
+				if (kol == max)
+				{
+					b += 3;
+					for (p = z; p < b - 2; p++)
+					{
+						B[p][0] = x1;
+						B[p][1] = y1;
+						B[p + 1][0] = x2;
+						B[p + 1][1] = y2;
+						B[p + 2][0] = x3;
+						B[p + 2][1] = y3;
+					}
+					z = b;
+					max = kol;
+				}
+
+
+				kol = 0;
+				
+
+			}
+		}
+	}
+
+	if (max == 0)
+	{
+		cout << "Среди заданных координат не было определено ни одной подходящей фигуры";
+		out1 << "Среди заданных координат не было определено ни одной подходящей фигуры";
+		out2 << "Среди заданных координат не было определено ни одной подходящей фигуры";
+	}
+	else
+	{
+		cout << "Координаты вершин фигур, содержащей максимальное количество точек:\n" << "X Y\n";
+		out1 << "Координаты вершин фигур, содержащей максимальное количество точек:\n" << "X Y\n";
+		out2 << "Координаты вершин фигур, содержащей максимальное количество точек:\n" << "X Y\n";
+		for (i = 0; i < b; i++)
+		{
+			for (j = 0; j < 2; j++)
+			{
+				cout << B[i][j] << ' ';
+				out1 << B[i][j] << ' ';
+				out2 << B[i][j] << ' ';
+			}
+			cout << endl;
+			out1 << endl;
+			out2 << endl;
+		}
+	}
+}
